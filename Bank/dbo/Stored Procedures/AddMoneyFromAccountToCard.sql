@@ -1,36 +1,34 @@
-CREATE PROCEDURE SAFE_TRANSACTION @ClientID INT, @AmountOfMoneyForTransaction DECIMAL, @CardToTransferToID INT
+CREATE PROCEDURE AddMoneyFromAccountToCard
+	   @CardNumber VARCHAR(19),
+	   @Sum DECIMAL(18, 2)
 AS 
-SET XACT_ABORT, NOCOUNT ON
-BEGIN TRY
-IF (@ClientID != (SELECT ClientID FROM Client_Data WHERE ClientID = @ClientID) OR @ClientID = 0)
-BEGIN  
- RAISERROR ('There is no such account', 16, 1)
-END
-IF (@AmountOfMoneyForTransaction > (SELECT (AccountMoney - MoneyOnCards) FROM Client_Data WHERE @ClientID = ClientID))
-BEGIN 
- RAISERROR ('No available money for transaction', 16, 1)
-END
-IF (@CardToTransferToID != Any(SELECT Card_ID FROM Cards))
-BEGIN 
- RAISERROR ('WRONG CARD ID', 16, 1)
-END
-BEGIN TRANSACTION
-UPDATE Client_Data
-SET MoneyOnCards = MoneyOnCards + @AmountOfMoneyForTransaction WHERE ClientID = @ClientID
-UPDATE Cards
-SET MoneyOnCard = MoneyOnCard + @AmountOfMoneyForTransaction WHERE Client_FK = @ClientID AND Card_ID = @CardToTransferToID
-COMMIT TRANSACTION
-END TRY
-BEGIN CATCH
-DECLARE @ErrorMsg nvarchar(240)
-DECLARE @ErrorSeverity INT
-DECLARE @ErrState INT
+BEGIN
+	IF (@CardNumber != ALL(SELECT Number FROM Cards))
+				RAISERROR('Wrong Card Number!', 16, 1)
 
-SELECT @ErrorMsg = ERROR_MESSAGE(),
-       @ErrorSeverity = ERROR_SEVERITY(),
-	   @ErrState = ERROR_STATE();
+	IF (0 > ALL(SELECT Users.Balance - CardsTotalBalance.CardsBalance - @Sum
+			    FROM Users
+							LEFT JOIN (SELECT Cards.[User_Id], SUM(Cards.Balance) AS CardsBalance
+									  FROM Cards
+									  GROUP BY Cards.[User_Id]) AS CardsTotalBalance ON Users.Id = CardsTotalBalance.[User_Id]
+							LEFT JOIN (SELECT Number, [User_Id] FROM Cards) AS CardsNumber ON Users.Id = CardsNumber.[User_Id]
+				WHERE CardsNumber.Number = @CardNumber))
+				 RAISERROR('No money available for transaction', 16, 1)
 
-RAISERROR (@ErrorMsg, @ErrorSeverity, @ErrState)
-IF @@trancount > 0 ROLLBACK TRANSACTION
-RETURN -4
-END CATCH
+	BEGIN TRANSACTION
+		UPDATE Cards
+		SET Balance = Balance + @Sum
+		WHERE 0 <= ALL(SELECT Users.Balance - CardsTotalBalance.CardsBalance - @Sum
+					  FROM Users
+							LEFT JOIN (SELECT Cards.[User_Id], SUM(Cards.Balance) AS CardsBalance
+									  FROM Cards
+									  GROUP BY Cards.[User_Id]) AS CardsTotalBalance ON Users.Id = CardsTotalBalance.[User_Id]
+							LEFT JOIN (SELECT Number, [User_Id] FROM Cards) AS CardsNumber ON Users.Id = CardsNumber.[User_Id]
+					  WHERE CardsNumber.Number = @CardNumber)
+		   AND Cards.Id = ALL(SELECT Id FROM Cards
+							 WHERE Cards.Number = @CardNumber)
+
+		IF (@@ERROR <> 0)
+				ROLLBACK TRANSACTION
+	COMMIT TRANSACTION
+END
