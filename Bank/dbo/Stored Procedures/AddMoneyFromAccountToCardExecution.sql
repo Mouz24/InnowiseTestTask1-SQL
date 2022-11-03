@@ -1,15 +1,24 @@
-
-USE Bank_Sphere
+USE [Bank_Sphere]
 GO
-SELECT * FROM Client_Data,Bank_Data,Cards WHERE Client = ClientID AND Client = Client_FK
-GO
-DECLARE	@Value int
 
-EXEC	@Value = dbo.SAFE_TRANSACTION
-        @ClientID = 5,
-		@AmountOfMoneyForTransaction = 520.00 ,
-		@CardToTransferToID  = 7
-		
-GO
-SELECT * FROM Client_Data,Bank_Data,Cards WHERE Client = ClientID AND Client = Client_FK
+SELECT Clients.FirstName, Clients.SecondName, Cards.Number, Users.Balance, Cards.Balance AS CardBalance
+FROM Clients 
+JOIN Users ON Users.Client_Id = Clients.Id
 
+JOIN Cards ON Cards.[User_Id] = Users.Id
+
+DECLARE	@return_value int
+
+EXEC	@return_value = [dbo].[AddMoneyFromAccountToCard]
+		@CardNumber = '4000-0012-3456-7899',
+		@Sum = 10.00
+
+SELECT	'Return Value' = @return_value
+
+GO
+
+SELECT Clients.FirstName, Clients.SecondName, Cards.Number, Users.Balance, Cards.Balance AS CardBalance
+FROM Clients 
+JOIN Users ON Users.Client_Id = Clients.Id
+
+JOIN Cards ON Cards.[User_Id] = Users.Id
