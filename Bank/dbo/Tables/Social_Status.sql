@@ -1,0 +1,6 @@
+CREATE TABLE Social_Status
+(
+	Id INT IDENTITY(1,1) NOT NULL,
+	Current_Status VARCHAR(25) DEFAULT('Unemployed') NOT NULL,
+	PRIMARY KEY CLUSTERED ([Id] ASC) 
+);
