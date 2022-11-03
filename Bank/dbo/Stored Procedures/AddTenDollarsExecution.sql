@@ -1,11 +1,25 @@
-
-SELECT * FROM Client_Data,Bank_Data WHERE Client = ClientID
+USE [Bank_Sphere]
 GO
-DECLARE	@Value int
 
-EXEC	@Value = dbo.ADD10DOLLARS
-		@StatusID = 2
+SELECT Clients.FirstName, Clients.SecondName, Users.Balance, Bank.Bank_Name
+FROM Clients
+JOIN Users ON Users.Client_Id = Clients.Id
+
+JOIN (SELECT Id, Bank_Name 
+		  FROM Banks) AS Bank ON Bank.Id = Clients.Bank_Id
+
+DECLARE	@return_value int
+
+EXEC	@return_value = [dbo].[AddTenDollars]
+		@Status = 'Disabled'
+
+SELECT	'Return Value' = @return_value
+
 GO
-SELECT * FROM Client_Data,Bank_Data WHERE Client = ClientID
 
+SELECT Clients.FirstName, Clients.SecondName, Users.Balance, Bank.Bank_Name
+FROM Clients
+JOIN Users ON Users.Client_Id = Clients.Id
 
+JOIN (SELECT Id, Bank_Name 
+		  FROM Banks) AS Bank ON Bank.Id = Clients.Bank_Id
