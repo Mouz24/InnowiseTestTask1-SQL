@@ -1,6 +1,5 @@
-USE Bank_Sphere
-GO
-SELECT *, CASE WHEN ((AccountMoney - MoneyOnCards) < 0) THEN 0 ELSE AccountMoney - MoneyOnCards END
-AS MoneyAvailableForTransfer FROM Client_Data, Bank_Data
-WHERE Client = ClientID
-
+SELECT Users.Id, Clients.FirstName, Clients.SecondName, (Users.Balance - SUM(Cards.Balance)) AS MoneyAvailableForTransfer
+FROM Users
+	 LEFT JOIN Cards ON Cards.[User_id] = Users.Id
+	 LEFT JOIN Clients ON Clients.Id = Users.Client_Id
+GROUP BY Users.Id, Users.Balance, Clients.FirstName, Clients.SecondName
