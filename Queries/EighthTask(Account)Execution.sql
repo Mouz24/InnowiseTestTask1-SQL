@@ -1,7 +1,14 @@
+SELECT Clients.FirstName, Clients.SecondName, Cards.Number, Users.Balance, Cards.Balance AS CardBalance
+FROM Clients 
+JOIN Users ON Users.Client_Id = Clients.Id
 
-USE Bank_Sphere
-GO
-SELECT * FROM Client_Data, Cards WHERE ClientID = Client_FK
-UPDATE Client_Data
-SET AccountMoney = 400.00 WHERE ClientID = 1
-SELECT * FROM Client_Data, Cards WHERE ClientID = Client_FK
+JOIN Cards ON Cards.[User_Id] = Users.Id
+
+UPDATE Users
+SET Balance = 300.00 WHERE Client_Id = 4
+
+SELECT Clients.FirstName, Clients.SecondName, Cards.Number, Users.Balance, Cards.Balance AS CardBalance
+FROM Clients 
+JOIN Users ON Users.Client_Id = Clients.Id
+
+JOIN Cards ON Cards.[User_Id] = Users.Id
